@@ -35,7 +35,6 @@ public class VehicleService {
         return VehicleResponse.from(vehicleRepository.save(vehicle));
     }
 
-    @Transactional(readOnly = true)
     public List<VehicleResponse> getAll() {
         return vehicleRepository.findAll()
                 .stream()
@@ -43,10 +42,15 @@ public class VehicleService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public VehicleResponse getById(UUID id) {
         Vehicle vehicle = findOrThrow(id);
         return VehicleResponse.from(vehicle);
+    }
+
+    public VehicleResponse getByLicensePlate(String plate) {
+        return vehicleRepository.findByLicensePlate(plate)
+                .map(VehicleResponse::from)
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found with license plate: " + plate));
     }
 
     @Transactional

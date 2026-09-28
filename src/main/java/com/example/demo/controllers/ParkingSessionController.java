@@ -17,37 +17,37 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/parking-sessions")
 @RequiredArgsConstructor
-@Tag(name = "Parking Sessions", description = "Vehicle check-in and check-out")
+@Tag(name = "Сессии", description = "Въезд и выезд транспортных средств")
 public class ParkingSessionController {
 
     private final ParkingSessionService sessionService;
 
     @PostMapping("/check-in")
-    @Operation(summary = "Check in a vehicle to a parking spot")
+    @Operation(summary = "Въезд — поставить ТС на парковочное место")
     public ResponseEntity<ParkingSessionResponse> checkIn(@Valid @RequestBody CheckInRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(sessionService.checkIn(request));
     }
 
     @PostMapping("/check-out/{sessionId}")
-    @Operation(summary = "Check out a vehicle — calculates cost and frees the spot")
+    @Operation(summary = "Выезд — рассчитать стоимость и освободить место")
     public ResponseEntity<ParkingSessionResponse> checkOut(@PathVariable UUID sessionId) {
         return ResponseEntity.ok(sessionService.checkOut(sessionId));
     }
 
     @GetMapping
-    @Operation(summary = "Get all parking sessions")
+    @Operation(summary = "Получить все сессии")
     public ResponseEntity<List<ParkingSessionResponse>> getAll() {
         return ResponseEntity.ok(sessionService.getAll());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get parking session by ID")
+    @Operation(summary = "Получить сессию по ID")
     public ResponseEntity<ParkingSessionResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(sessionService.getById(id));
     }
 
     @GetMapping("/active")
-    @Operation(summary = "Get all currently active sessions (vehicles still parked)")
+    @Operation(summary = "Получить активные сессии (ТС ещё на парковке)")
     public ResponseEntity<List<ParkingSessionResponse>> getActive() {
         return ResponseEntity.ok(sessionService.getActive());
     }

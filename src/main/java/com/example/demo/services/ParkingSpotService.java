@@ -1,17 +1,19 @@
 package com.example.demo.services;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.demo.dto.parkingspot.ParkingSpotRequest;
 import com.example.demo.dto.parkingspot.ParkingSpotResponse;
 import com.example.demo.entity.Classification;
 import com.example.demo.entity.ParkingSpot;
 import com.example.demo.entity.VehicleType;
 import com.example.demo.repository.ParkingSpotRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +37,6 @@ public class ParkingSpotService {
         return ParkingSpotResponse.from(parkingSpotRepository.save(spot));
     }
 
-    @Transactional(readOnly = true)
     public List<ParkingSpotResponse> getAll() {
         return parkingSpotRepository.findAll()
                 .stream()
@@ -43,7 +44,6 @@ public class ParkingSpotService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public ParkingSpotResponse getById(UUID id) {
         return ParkingSpotResponse.from(findOrThrow(id));
     }
@@ -75,7 +75,6 @@ public class ParkingSpotService {
         parkingSpotRepository.delete(spot);
     }
 
-    @Transactional(readOnly = true)
     public List<ParkingSpotResponse> getAvailable(VehicleType type, Classification classification) {
         if (type != null && classification != null) {
             return parkingSpotRepository.findByIsOccupiedAndTypeAndClassification(false, type, classification)
@@ -91,10 +90,15 @@ public class ParkingSpotService {
                 .stream().map(ParkingSpotResponse::from).toList();
     }
 
-    // --- helper ---
+    // --- helpers ---
 
     public ParkingSpot findOrThrow(UUID id) {
         return parkingSpotRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Parking spot not found with id: " + id));
+    }
+    
+    public ParkingSpot findOrThrowLocked(UUID id) {
+        return parkingSpotRepository.findByIdWithLock(id)
                 .orElseThrow(() -> new IllegalArgumentException("Parking spot not found with id: " + id));
     }
 }

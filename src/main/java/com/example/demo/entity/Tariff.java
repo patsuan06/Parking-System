@@ -13,26 +13,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Entity
 @Data
-public class ParkingSpot {
+public class Tariff {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "vehicle_type", nullable = false, unique = true)
+    private VehicleType vehicleType;
+
+    // Rate in сом per hour
     @Positive
-    @Column(name = "spot_number", nullable = false, unique = true)
-    private int spotNumber;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private VehicleType type;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "classification", nullable = false)
-    private Classification classification;
-
-    @Column(name = "is_occupied", nullable = false)
-    private boolean isOccupied;
+    @Column(name = "rate_per_hour", nullable = false)
+    private double ratePerHour;
 }

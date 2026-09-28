@@ -1,37 +1,41 @@
 package com.example.demo.services;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.demo.dto.parkingsession.CheckInRequest;
 import com.example.demo.dto.parkingsession.ParkingSessionResponse;
 import com.example.demo.entity.ParkingSession;
 import com.example.demo.entity.ParkingSpot;
 import com.example.demo.entity.Vehicle;
 import com.example.demo.repository.ParkingSessionRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.example.demo.repository.VehicleRepository;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class ParkingSessionService {
 
-    // Tariff in сом per hour
-    private static final double RATE_CAR = 100.0;
-    private static final double RATE_MOTORCYCLE = 50.0;
-    private static final double RATE_TRUCK = 150.0;
 
     private final ParkingSessionRepository sessionRepository;
-    private final VehicleService vehicleService;
+    private final VehicleRepository vehicleRepository;
     private final ParkingSpotService spotService;
+    private final TariffService tariffService;
 
     @Transactional
     public ParkingSessionResponse checkIn(CheckInRequest request) {
-        Vehicle vehicle = vehicleService.findOrThrow(request.vehicleId());
-        ParkingSpot spot = spotService.findOrThrow(request.parkingSpotId());
+        Vehicle vehicle = vehicleRepository.findByLicensePlate(request.licensePlate())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Vehicle not found with license plate: " + request.licensePlate()));
+        // Locks the spot row (SELECT ... FOR UPDATE) so two simultaneous
+        // check-ins for the same spot are serialized at the DB level.
+        ParkingSpot spot = spotService.findOrThrowLocked(request.parkingSpotId());
 
         // 1. Check spot is free
         if (spot.isOccupied()) {
@@ -83,7 +87,6 @@ public class ParkingSessionService {
         return ParkingSessionResponse.from(sessionRepository.save(session));
     }
 
-    @Transactional(readOnly = true)
     public List<ParkingSessionResponse> getAll() {
         return sessionRepository.findAll()
                 .stream()
@@ -91,12 +94,10 @@ public class ParkingSessionService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public ParkingSessionResponse getById(UUID id) {
         return ParkingSessionResponse.from(findOrThrow(id));
     }
 
-    @Transactional(readOnly = true)
     public List<ParkingSessionResponse> getActive() {
         return sessionRepository.findByEndTimeIsNull()
                 .stream()
@@ -115,13 +116,7 @@ public class ParkingSessionService {
         long minutes = ChronoUnit.MINUTES.between(start, end);
         // Round up to next full hour, minimum 1 hour
         long hours = Math.max(1, (long) Math.ceil(minutes / 60.0));
-
-        double rate = switch (vehicle.getVehicleType()) {
-            case CAR -> RATE_CAR;
-            case MOTORCYCLE -> RATE_MOTORCYCLE;
-            case TRUCK -> RATE_TRUCK;
-        };
-
+        double rate = tariffService.getRateOrThrow(vehicle.getVehicleType());
         return hours * rate;
     }
 }

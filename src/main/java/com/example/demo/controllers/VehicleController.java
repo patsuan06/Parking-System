@@ -17,31 +17,37 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/vehicles")
 @RequiredArgsConstructor
-@Tag(name = "Vehicles", description = "Vehicle management")
+@Tag(name = "Транспортные средства", description = "Управление транспортными средствами")
 public class VehicleController {
 
     private final VehicleService vehicleService;
 
     @PostMapping
-    @Operation(summary = "Register a new vehicle")
+    @Operation(summary = "Зарегистрировать новое транспортное средство")
     public ResponseEntity<VehicleResponse> create(@Valid @RequestBody VehicleRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(vehicleService.create(request));
     }
 
     @GetMapping
-    @Operation(summary = "Get all vehicles")
+    @Operation(summary = "Получить список всех ТС")
     public ResponseEntity<List<VehicleResponse>> getAll() {
         return ResponseEntity.ok(vehicleService.getAll());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get vehicle by ID")
+    @Operation(summary = "Получить ТС по ID")
     public ResponseEntity<VehicleResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(vehicleService.getById(id));
     }
 
+    @GetMapping("/by-plate")
+    @Operation(summary = "Найти ТС по госномеру")
+    public ResponseEntity<VehicleResponse> getByLicensePlate(@RequestParam String plate) {
+        return ResponseEntity.ok(vehicleService.getByLicensePlate(plate));
+    }
+
     @PutMapping("/{id}")
-    @Operation(summary = "Update vehicle")
+    @Operation(summary = "Изменить данные ТС")
     public ResponseEntity<VehicleResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody VehicleRequest request) {
@@ -49,7 +55,7 @@ public class VehicleController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete vehicle")
+    @Operation(summary = "Удалить ТС")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         vehicleService.delete(id);
         return ResponseEntity.noContent().build();
